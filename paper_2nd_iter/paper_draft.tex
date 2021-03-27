@@ -1,0 +1,409 @@
+\documentclass[doc,a4paper,man,natbib,floatsintext,noextraspace]{apa6}
+
+
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[singlespacing]{setspace}
+
+\begin{Schunk}
+\begin{Sinput}
+> # load packages
+> library(patchSynctex)
+> library(knitcitations)
+> library(car, warn.conflicts = FALSE)
+> library(MASS)
+> library(brms)
+> library(xtable)
+> library(ggpubr)
+> library(languageR)
+> library(tidyverse)
+> library(gdata)
+> library(magrittr)
+> library(ggplot2)
+> theme_set(theme_bw())
+> # to-do: check that the CI-computation code is up-to-date
+> source("../scripts/misc.R")
+> 
+\end{Sinput}
+\end{Schunk}
+\title{The Role of Shallow Processing in Agreement Attraction}
+\shorttitle{Your APA6-Style Manuscript}
+\author{Utku Türk, Pavel Loga\v{c}ev}
+\affiliation{Boğaziçi University}
+
+
+\abstract{We report the results of two speeded acceptability judgment experiments in Turkish. We hypothesized an alternative explanation for agreement attraction effects in Turkish that is based on shallow processing. Our findings contradict our hypothesized form-driven processing strategy and support an account of agreement attraction based on the use of abstract linguistic features, rather than mere form.}
+
+\input{settings.tex}
+
+\usepackage{Sweave}
+\begin{document}
+\input{paper_draft-concordance}
+
+\maketitle
+
+
+\section{Introduction} \label{sec:Intro}
+
+% %\footnote{\printglossaries}. % add this to somewhere in the first page I suppose
+% 
+% \subsection{Agreement Attraction Thingy} \label{sec:Intro:literature}
+% 
+% \subsubsection{Morphophonology} \label{sec:Intro:literature:morphophonology}
+% 
+% %fill here accordingly to your results AFTER YOU WRITE THE RESULT.
+% 
+% 
+% \subsubsection{related sub-sub-field studies} \label{sec:Intro:literature:others}
+% 
+% \subsubsection{This work details} \label{sec:Intro:literature:thiswork}
+
+% \citet{LagoEtAl:2018} hypothesize that genitive NPs can trigger agreement attraction in Turkish, because Turkish makes heavy use of genitive subjects, which means genitives are a priori likely to function as agreement controllers. The underlying assumption is that agreement processes rely on, at least partially, the case of an NP to determine its fit for the role of an agreement controller. 
+% If that is so, their items are problematic %as in ... give an example
+% in that the marking on the head noun is ambiguous between possessive and accusative case, while only possessive-marked NPs qualify as agreement controllers. Therefore, if engaged in shallow processing, readers may be more likely to misidentify the genitive NP as the agreement controller when the head noun, which is the only other alternative, is ambiguous, compared to when it is not.
+
+% In Experiment 1, we decided to test this hypothesis 
+
+
+% to-do: This all needs to go up, to the description of the potential confound in Lago et al.'s study.
+%This change was due to the morpho-phonologic nature of possessive suffix in Turkish, which spell-outs as (\textit{-I}) after a consonant same as the accusative. 
+
+
+\section{Experiment 1} \label{sec:exp1}
+
+% do not do this in one chunk. differentiate the chunks and give them proper names.
+\begin{Schunk}
+\begin{Sinput}
+> fname_data <- "../workspace_exp1/exp_data.rds"
+> data_exp1 <- readRDS(fname_data)
+> fname_form <- "../workspace_exp1/exp_form.rds"
+> form_exp1 <- readRDS(file = fname_form)
+> ### note: the low accuracy on fillers is not caused by a couple of items
+> ###       -> see below
+> # filler_avgs <- 
+> # data_exp1 %>% subset(Type == "filler") %>% group_by(Item, condition) %>% 
+> #               summarize(M = mean(ResponseYes, na.rm = T)) %>%
+> #               arrange(condition, Item)
+> # fillers %>% subset(condition == "a") 
+> # fillers %>% subset(condition == "b")
+> ###
+> 
+> # compute by-subject percentages of 'yes' responses, and average RTs 
+> avg_by_subj <- data_exp1 %>%
++                 group_by(subject, experiment, condition, 
++                          grammatical, verb_num, attractor_num) %>%
++                 summarize(avRT = mean(RT), 
++                           p_yes = mean(ResponseYes, na.rm = T), 
++                           N = sum(!is.na(ResponseYes))  )
+> # reformat by-subject averages to a wide format
+> avg_by_subj_wide <- avg_by_subj %>% 
++                       mutate(expcond = paste(experiment, condition, sep="_")) %>% 
++                       ungroup() %>%
++                       dplyr::select(-experiment, -condition, -avRT, -N,
++                                     -grammatical, -verb_num, -attractor_num) %>%
++                       tidyr::spread(expcond, p_yes) %>% 
++                       mutate(delta_dc = AgrAttr_d - AgrAttr_c)
+> # Load Lago et al.'s monolingual data
+> fname_lagoetal <- "../Data/Lago_et_al/Lago_data.csv"
+> df_lagoetal <- read.csv(fname_lagoetal, encoding = "UTF-8", as.is = T)
+> df_lagoetal %<>% subset(Group == "monolingual")
+> df_lagoetal %<>% dplyr::select(-Accuracy, -L1:-Group, -List:-SelfRateGerman)
+> # Note: All rows with Experiment == "offline" also seem to be for 
+> #       the UNP task ('Grammatical' is NA). I wonder if these were
+> #       the same subjects, or if the subject labels were simply the same
+> #       for the two experiments.
+> with(df_lagoetal, stopifnot( is.na(Grammatical) == (Experiment == "offline") ))
+> df_lagoetal_unp <- df_lagoetal %>% 
++                     subset(is.na(Grammatical)) %>%
++                     dplyr::select(-Grammatical:-Label)
+> df_lagoetal_attr <- df_lagoetal %>% 
++                   subset(!is.na(Grammatical)) %>%
++                   dplyr::select(-Distance:-NewCond)
+> df_lagoetal_attr %<>% mutate(ResponseYes = (Response == "yes") ) %>% 
++                       dplyr::select(-Response)
+> df_lagoetal_attr %<>% ungroup() %>%
++                       dplyr::select(grammatical=Grammatical,
++                                     attractor_num=Attractor,
++                                     experiment=Experiment,
++                                     lagoetal_condition=Condition, 
++                                     subject=Participant, 
++                                     item=Item,
++                                     ResponseYes,
++                                     RT)
+> # map to our condition labels
+> lagoetal_condition_mapping <- data.frame( condition = c("a", "b", "c", "d"),
++                                           lagoetal_condition = c("d", "b", "c", "a"), 
++                                           stringsAsFactors = F)
+> df_lagoetal_attr %<>% left_join( lagoetal_condition_mapping, by = "lagoetal_condition" )
+> # compute by-subject percentages of 'yes' responses, and average RTs 
+> avg_by_subj_lagoetal <- df_lagoetal_attr %>%
++                             group_by(subject, experiment, condition, grammatical, attractor_num) %>%
++                             summarize(avRT = mean(RT), 
++                                       p_yes = mean(ResponseYes, na.rm = T), 
++                                       N = sum(!is.na(ResponseYes))  )
+> # reformat by-subject averages to a wide format
+> avg_by_subj_lagoetal_wide <- avg_by_subj_lagoetal %>% 
++                                     mutate(expcond = paste(experiment, condition, sep="_")) %>% 
++                                     ungroup() %>%
++                                     dplyr::select(-experiment, -condition, -avRT, -N,
++                                                   -grammatical, -attractor_num) %>%
++                                     tidyr::spread(expcond, p_yes) %>% 
++                                     mutate(delta_dc = online_d - online_c)
+> # identify bad participants 
+> bad_subjects <- subset(avg_by_subj_wide, delta_dc <= 0.25 ) %>% .$subject
+> data_exp1_clean <- data_exp1 %>% subset(!subject %in% bad_subjects)
+> # identify bad participants 
+> bad_subjects_lagoetal <- subset(avg_by_subj_lagoetal_wide, delta_dc <= 0.25 ) %>% .$subject
+> df_lagoetal_attr_clean <- df_lagoetal_attr %>% subset(!subject %in% bad_subjects_lagoetal)
+> # merge both datasets
+> df_merge_exp1 <- data_exp1_clean %>% ungroup() %>% 
++                       dplyr::select(source=experiment, 
++                                     grammatical, 
++                                     attractor_num,
++                                     # condition,
++                                     subject, 
++                                     item=Item,
++                                     ResponseYes, 
++                                     RT)
+> df_merge_exp1$experiment <- "Experiment 1"
+> df_merge_exp1$grammatical %<>% dplyr::recode(gram="grammatical", ungram="ungrammatical")
+> df_merge_exp1$attractor_num %<>% dplyr::recode(pl="plural", sg="singular")
+> df_merge_exp1$item %<>% as.integer()
+> df_merge_exp1$subject %<>% as.character()
+> df_merge_lago <- df_lagoetal_attr_clean %>%
++                       ungroup() %>% 
++                       dplyr::select(grammatical, attractor_num,
++                                     subject, item, ResponseYes, RT)
+> df_merge_lago$experiment <- "Lago et al. (2018)" 
+> df_merge_lago$source <- NA
+> word_freq <- readxl::read_excel("../Data/frequencies_exp1_and_lago.xlsx", sheet = 1)
+> word_freq$freq_percentage %<>% as.numeric()
+> word_freq %<>% dplyr::select(-freq_standardized, -freq_percentage, -word)
+> word_freq %<>% tidyr::spread(place, freq_count)
+> word_freq %<>% dplyr::group_by(exp) %>% 
++                dplyr::mutate( freq_cat_n1 = ifelse(n1 > median(n1), "high", "low"),
++                               freq_cat_n2 = ifelse(n2 > median(n2), "high", "low"),
++                               freqlog_n1 = scale(log(n1)),
++                               freqlog_n2 = scale(log(n2)),
++                               freqlog_n1n2 = log(n1) - log(n2)
++                             ) %>% 
++                 ungroup()
+> # word_freq$freq_cat_n1 %<>% as.factor()
+> # word_freq$freq_cat_n2 %<>% as.factor()
+> 
+> 
+> word_freq_exp1 <- word_freq %>% subset(exp == "exp1") %>% dplyr::select(-exp)
+> df_merge_exp1 %<>% left_join(word_freq_exp1, by = "item")
+> word_freq_lago <- word_freq %>% subset(exp == "lagoetal") %>% dplyr::select(-exp)
+> df_merge_lago %<>% left_join(word_freq_lago, by = "item")
+> df_merge_lago$item %<>% add(1000)
+> df_merged <- dplyr::bind_rows(df_merge_exp1, df_merge_lago)
+> df_merged$subject %<>% as.factor()
+> df_merged$item %<>% as.factor()
+> df_exp1_na_nofillers <- subset(df_merge_exp1, is.na(ResponseYes) & source != "filler")
+> df_merged %<>% subset( !is.na(ResponseYes) )
+> 
+\end{Sinput}
+\end{Schunk}
+
+In Experiment 1, we tested whether speakers of Turkish make fewer agreement attraction errors when the local ambiguity in the head noun is resolved. 
+Specifically, we tried to replicate \citet{LagoEtAl:2018} study. However, instead of using morphologically ambiguous head nouns, we uses nouns ending in a vowel, thus resolving the ambiguity between the accusative and possessive. 
+
+\subsection{Participants} \label{sec:exp1:participants}
+
+We recruited 118 undergraduate students to participate in Experiment 1 in exchange for course credit. All participants were native speakers of Turkish, with an average age of 20 (range: 18 -- 32).  
+Experiment were carried out following the Declaration of Helsinki and the regulations concerning ethics at research in Bo\u{g}azi\c{c}i University. All participants provided informed consent prior to their participation.
+
+\subsection{Materials} \label{sec:exp1:materials}
+
+We used 40 sets of sentences like (\ref{item:exp1ExperimentalItems}), in which we manipulated 
+(i) the number of the attractor noun, and
+(ii) the number agreement on the verb. 
+Plural number and plural agreement were both marked with the affix \textit{-ler/-lar}, while singular number and singular agreement were marked with its absence. 
+%
+We have used the experimental items in \citet{LagoEtAl:2018} as a base. 
+All sentences started with a complex subject NP like \textit{`the manager's cook'} (\textit{yöneticinin aşcısı}), in which the possessor, which functioned as the attractor, carried genitive case, and the head noun carried possessive case. 
+Because the head noun was singular in all conditions, sentences with plural verb agreement were ungrammatical. 
+Moreover, as in the original study, the properties of the nouns in the complex subject NP and the relation between these nouns held constant in our replication. 
+The distribution of the verb types followed the same pattern as in \citet{LagoEtAl:2018}, namely twenty unergatives, eighteen unaccusatives, and two optionally transitive verbs. 
+Both in \citet{LagoEtAl:2018} and in our replication, pre-verbal adverbials consisting of 2-3 words (15 characters on average) are used.
+Unlike the \citet{LagoEtAl:2018} sentences, our head nouns were vowel-ending, and therefore not ambiguous between accusative case, for which the case suffix is \textit{-yI}, and possessive case, for which the suffix is \textit{-sI}. 
+
+
+\ex. \label{item:exp1ExperimentalItems}
+%
+\a. \textsc{Plural Attractor, Ungrammatical (Plural Verb)} \label{item:exp1expitem-plpl}\\ 
+  \gll *[Yönetici-ler-in \textbf{aşcı-sı}] mutfak-ta sürekli \textbf{zıpla-dı-lar}.\\ 
+  manager-\textsc{pl}-\textsc{gen}  cook-\textsc{poss} kitchen-\textsc{loc} non-stop  jump-\textsc{pst}-\textsc{pl}.\\
+  \glt \textit{`The cooks of the manager were jumping in the kitchen non-stop.'}
+%
+\b. \textsc{Plural Attractor, Grammatical (Singular Verb)} \label{item:exp1expitem-plsg}\\ 
+  \gll [Yönetici-ler-in \textbf{aşcı-sı}] mutfak-ta sürekli \textbf{zıpla-dı}.\\ 
+  manager-\textsc{pl}-\textsc{gen}  cook-\textsc{poss} kitchen-\textsc{loc} non-stop  jump-\textsc{pst}.\\
+  \glt \textit{`The cooks of the manager was jumping in the kitchen non-stop.'}
+%
+\c. \textsc{Singular Attractor, Ungrammatical (Plural Verb)} \label{item:exp1expitem-sgpl}\\ 
+  \gll *[Yönetici-nin \textbf{aşcı-sı}] mutfak-ta sürekli \textbf{zıpla-dı-lar}.\\ 
+  manager-\textsc{gen}  cook-\textsc{poss} kitchen-\textsc{loc} non-stop  jump-\textsc{pst}-\textsc{pl}.\\
+  \glt \textit{`The cook of the manager were jumping in the kitchen non-stop.'}
+%
+\d. \textsc{Singular Attractor, Grammatical (Singular Verb)}\label{item:exp1expitem-sgsg}\\ 
+  \gll [Yönetici-nin \textbf{aşcı-sı}] mutfak-ta sürekli \textbf{zıpla-dı}. \\ 
+  manager-\textsc{gen}  cook-\textsc{poss} kitchen-\textsc{loc} non-stop  jump-\textsc{pst}.\\
+  \glt \textit{`The cook of the manager was jumping in the kitchen non-stop.'}
+
+We intermixed our experimental sentences with 40 filler sentences of two types, as illustrated in (\ref{item:exp1FillerItems}). 
+To compensate for the fact that among experimental sentences, all ungrammatical sentences ended in a plural-agreeing verb, while all grammatical sentences ended in a singular-agreeing verb, we included 20 grammatical sentences with plural verbs, and 20 ungrammatical sentences with singular agreement. 
+This was done in order to discourage participants from using a strategy based on verb number. 
+Filler items followed a similar template in which sentence again started with a complex genitive-possessive noun phrase. 
+However, in filler items, they were the controller of an embedded clause which serves as a adverbial. 
+In grammatical fillers, we have made use of pro-dropped subject strategy in Turkish; thus, it enabled us to use plural verb without having ungrammatical sentences as in (\ref{item:exp1GrammaticalFiller}). The object \textit{tutarsızlık} is a bare nominal preceding a light verb construction. 
+Differently in ungrammatical fillers, bare nominal did not precede a light verb construction, but an adverb and a verb. Since Turkish only allows bare nominals right next to the verb, sentences were deemed ungrammatical when the participants read the verb. 
+
+%Even though filler items did not follow a strict template as the experimental items, they were created within a template of \textit{Noun$_{{\textsc{gen}}}$-Noun$_{{\textsc{gen}}}$-Converb-Noun-Adverb-Verb}. The ungrammaticality was created non-locally in the filler items to avoid task strategies. Example filler sentences can be seen in \ref{item:exp1FillerItems}.
+
+
+\ex. \label{item:exp1FillerItems}
+%
+\a. \label{item:exp1GrammaticalFiller} \textsc{Grammatical Filler (Plural Verb)}\\ 
+  \gll [Sosyolog-un \textbf{öğrenci-si}] konuş-unca tutarsızlık açığ-a \textbf{çıkar-dı-lar}.\\ %utku: what does this bold mean? if it the dependency between them then the bold parts are not correct. ogrencisi is the subject of the verb konusunca, and the subject of the matrix verb cikardilar is omitted.
+  sociolog-\textsc{gen}  student-\textsc{poss} speak-\textsc{nmlz} inconsistency  open-\textsc{dat} deduct-\textsc{pst}-\textsc{pl}.\\
+  \glt \textit{`When the student of the sociologist spoke, they revealed an inconsistency.'}
+%to-do: Translation above doesn't make sense.
+%
+%
+\b. \textsc{Ungrammatical Filler (Singular Verb)}\\ 
+\gll *[Dansöz-ün \textbf{koca-sı}] var-ınca kapı sakince \textbf{aç-tı}.\\ 
+dancer-\textsc{gen}  husband-\textsc{poss} arrive-\textsc{nmlz} door slowly  open-\textsc{pst}.\\
+\glt \textit{Intended:`When the husband of the dancer came, the door opened slowly.'}
+% to-do: Does the above mean that it's grammatical with another meaning?
+
+\subsection{Procedure} \label{sec:exp1:procedure}
+
+The experiment was run online, using the web-based platform Ibex Farm (\url{http://spellout.net/ibexfarm/}). Each experimental session took approximately 25 minutes to complete.
+%
+Prior to the start of the experiment, participants provided demographic information, as well as informed consent to participate in the experiment. They read the instructions, and were given 9 practice trials before the experiment began.
+%
+Each trial began with a blank screen for 600 ms, followed by a word-by-word RSVP presentation of the sentence in the center of the screen, followed by an acceptability judgment. 
+Sentences were presented word-by-word in 30pt font size, and at a rate of 400 ms per word. Between each word, participants saw a blank screen for 100 ms. Participants pressed the key 'P' for \textit{'acceptable'} and 'Q' for \textit{'unacceptable'}. They were instructed to provide an acceptability rating before the 5,000 ms deadline. During the experiment, they were reminded to respond faster if they responded too slowly. 
+
+Participants saw 40 experimental and 40 filler sentences. Experimental sentences were distributed among four different lists according to a Latin-square design. Every participant saw one version of the experiment with a specific list and one item per condition.   
+
+\subsection{Analysis} \label{sec:exp1:analysis}
+
+Since our aim was to test whether the morphological ambiguity present in the \citet{LagoEtAl:2018} items affected the presence or magnitude of the agreement attraction effect, statistically, we needed to test for the presence of an interaction between 
+(i) the presence of the morphological ambiguity on the head noun, and 
+(ii) the agreement attraction effect. 
+In order to do so, we decided to analyze the data from the present experiment together with Lago et al.'s data, using experiment as an additional factor in the analysis.
+
+%All experimental trials from both experiments (Experiment 1 and  Lago et al.'s study) was included in the analysis. 
+
+Prior to analysis we removed the data for all participants who failed to show sufficient sentitivity to the effect of grammaticality in singular attractor conditions, i.e., when no agreement attraction was expected. Specifically, we removed all participants for whom the difference in the percentage of `yes' responses between the grammatical condition \ref{item:exp1expitem-sgsg} and the ungrammatical condition \ref{item:exp1expitem-sgpl} was below the threshold of 25 percentage points. As a result, we excluded 10 participants from experiment 1, and  one participant from the Lago et al. data
+
+We used the R packages brms \citep{R-brms_b} and rstan \citep{R-stan} to fit Bayesian hierarchical models \citep[e.g.,][]{GelmanHill:2007}. We analyzed only experimental sentences, and used 
+(i) grammaticality of the sentence, 
+(ii) attractor number, and 
+(iii) presence of morphological ambiguity (i.e., experiment), as well as all their interactions as predictors. 
+Moreover, we used by-participant and by-item intercepts and slopes for all predictors.
+Data for experiment 1, along with our analysis scripts can be found in \url{https://github.com/utkuturk/replication_lagoetal2018}.
+
+
+\subsection{Results} \label{sec:exp1:results}
+
+\begin{Schunk}
+\begin{Sinput}
+> df_merged %<>% mutate(ResponseCorrect = (ResponseYes == (grammatical == "grammatical") ) )
+> df_merged_nonna <- df_merged %>% subset(!is.na(ResponseYes))
+> # avg_clean <- 
+> # df_merged %>% subset(experiment == "Lago et al. (2018)") %>%
+> #      group_by(experiment, source, grammatical, attractor_num, subject) %>%
+> #      summarize(p_yes = mean(ResponseYes, na.rm=T)) %>%
+> #      summarize(p_yes = mean(p_yes))
+> 
+> avg_clean <- list()
+> avg_clean$resp <- df_merged_nonna %>% 
++               plyr::ddply(c("experiment"), function(df) {
++               df %>% se_cousineau(n_conditions = 4, subject, DV = ResponseYes, 
++                            group = c("experiment", "source", "grammatical", "attractor_num"), 
++                            is_proportion = TRUE)
++ })
+> avg_clean$rt <- df_merged_nonna %>%
++               plyr::ddply(c("experiment"), function(df) {
++               df %>% se_cousineau(n_conditions = 4, subject, DV = RT, 
++                            group = c("experiment", "source", "grammatical", "attractor_num"), 
++                            is_proportion = FALSE)
++ })
+> avg_clean$rt_correct <- df_merged_nonna %>% subset(ResponseCorrect) %>%
++               plyr::ddply(c("experiment"), function(df) {
++               df %>% se_cousineau(n_conditions = 4, subject, DV = RT, 
++                            group = c("experiment", "source", "grammatical", "attractor_num"), 
++                            is_proportion = FALSE)
++ })
+> avg_exp <- avg_clean %>% lapply(function(df) { df %>% subset(is.na(source) | source != "filler") })
+> avg_fillers <- avg_clean %>% lapply(function(df) { df %>% subset(source == "filler") })
+> pd <- position_dodge(0.0)
+> p_avg_resp <- avg_exp$resp %>%
++               ggplot(aes(grammatical, M, #linetype = attractor_num, 
++                          color = attractor_num, group = attractor_num)) + 
++                 geom_point(position = pd) + geom_line(position = pd) + 
++                 facet_wrap(~experiment)
+> p_avg_resp <- p_avg_resp + geom_errorbar(aes(ymin = M - 1.96*SE, ymax = M + 1.96*SE), width = 0.1, position = pd)
+> # p_avg_resp <- p_avg_resp + geom_line(data = avg_fillers) + 
+> #                             geom_point(data = avg_fillers) + 
+> 
+> p_avg_resp <- p_avg_resp + theme( strip.background = element_rect(fill="white") ) +
++                            theme_bw() + xlab("") + ylab("Percentage 'acceptable'")
+> p_avg_resp <- p_avg_resp + scale_y_continuous(labels=scales::percent)#, breaks = c(0, .25, .5, .75, 1))
+> p_avg_resp <- p_avg_resp + theme_bw()
+> p_avg_resp <- p_avg_resp + scale_color_discrete(name = "Attractor Number")
+> 
+\end{Sinput}
+\end{Schunk}
+
+
+\begin{Schunk}
+\begin{Sinput}
+> avg_exp_resp_exp1 <- avg_exp$resp %>% subset(experiment == "Experiment 1")
+> avg_exp_resp_lagoetal <- avg_exp$resp %>% subset(experiment == "Lago et al. (2018)")
+> 
+\end{Sinput}
+\end{Schunk}
+
+\begin{Schunk}
+\begin{Sinput}
+> exp1_cur_entry1 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "ungrammatical", attractor_num == "plural")
+> exp1_cur_entry2 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "ungrammatical", attractor_num == "singular")
+> exp1_cur_entry3 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "grammatical", attractor_num == "singular")
+> exp1_cur_entry4 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "grammatical", attractor_num == "plural")
+> lago_cur_entry1 = avg_exp$resp %>% filter(experiment == "Lago et al. (2018)", grammatical == "ungrammatical", attractor_num == "plural")
+> lago_cur_entry2 = avg_exp$resp %>% filter(experiment == "Lago et al. (2018)", grammatical == "ungrammatical", attractor_num == "singular")
+\end{Sinput}
+\end{Schunk}
+\autoref{fig:exp1AvgResponse} shows the average proportions of ‘acceptable’ responses by experimental condition for both the original experiment in \citet{LagoEtAl:2018} and our replication with unambiguous possessive marking. 
+%\Sexpr{ 
+%cur_entry1 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "ungrammatical", attractor_num == "plural");
+%cur_entry2 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "ungrammatical", attractor_num == "singular") }%
+It shows that ungrammatical sentences with plural attractors are rated as acceptable more often
+(M = 0.216125053905812, 
+SE = 0.0145431904422561) 
+than their counterparts with singular attractors 
+(M=0.111891454946085, 
+SE=0.0111174058577143).
+%
+%\Sexpr{ 
+%cur_entry1lago = avg_exp$resp %>% filter(experiment == "Lago et al. (2018)", grammatical == "ungrammatical", attractor_num == "plural");
+%cur_entry2lago = avg_exp$resp %>% filter(experiment == "Lago et al. (2018)", grammatical == "ungrammatical", attractor_num == "singular") }%
+%This means that ungrammatical sentences with plural attractors were classified as acceptable more often than their counterparts with singular attractors. 
+The magnitude of the effect (0.10) was in line with the findings reported in \citet{LagoEtAl:2018}, where the difference was 0.11.
+% 
+Accuracy rates for grammatical conditions were nearly equal
+%\Sexpr{ 
+%cur_entry3 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "grammatical", attractor_num == "singular");
+%cur_entry4 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "grammatical", attractor_num == "plural"); }%
+(M = 0.932541224823823 and 0.918369851020415, SE = 0.008853820748221 and 0.00967426201394975, for singular and plural attractors respectively). 
+
+
