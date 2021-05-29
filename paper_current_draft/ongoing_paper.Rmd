@@ -254,9 +254,13 @@ avg_by_subj_lagoetal_wide <- avg_by_subj_lagoetal %>%
 bad_subjects <- subset(avg_by_subj_wide, delta_dc <= 0.25 ) %>% .$subject
 data_exp1_clean <- data_exp1 %>% subset(!subject %in% bad_subjects)
 
+data_exp1_clean %<>% filter( RT > 200)
+
 # identify bad participants 
 bad_subjects_lagoetal <- subset(avg_by_subj_lagoetal_wide, delta_dc <= 0.25 ) %>% .$subject
 df_lagoetal_attr_clean <- df_lagoetal_attr %>% subset(!subject %in% bad_subjects_lagoetal)
+
+df_lagoetal_attr_clean %<>% filter( RT > 200)
 
 # merge both datasets
 df_merge_exp1 <- data_exp1_clean %>% ungroup() %>% 
@@ -552,18 +556,18 @@ n_cores <- 4
 n_iter <- 2000
 
 fname_exp1_responses <- "../workspace_exp1/fit_responses"
-m_responses <- brm(ResponseYes ~ cEndsInConsonant * cUngrammatical * cAttractorPlural + 
-                                 (cUngrammatical * cAttractorPlural + 1| subject) + 
-                                 (cUngrammatical * cAttractorPlural + 1| item),
+m_responses <- brm(ResponseYes ~ cEndsInConsonant * cGrammatical * cAttractorPlural + 
+                                 (cGrammatical * cAttractorPlural + 1| subject) + 
+                                 (cGrammatical * cAttractorPlural + 1| item),
                    data = df_merged_nofillers,
                    family = bernoulli("probit"), 
                    chains = n_chains, cores = n_cores, iter = n_iter,
                    file = fname_exp1_responses)
 
 fname_exp1_responses_exp1only <- "../workspace_exp1/fit_responses_exp1only"
-m_responses_exp1only <- brm(ResponseYes ~ cUngrammatical * cAttractorPlural * freqlog_n1n2 + 
-                                 (cUngrammatical * cAttractorPlural * freqlog_n1n2 + 1| subject) + 
-                                 (cUngrammatical * cAttractorPlural + 1| item),
+m_responses_exp1only <- brm(ResponseYes ~ cGrammatical * cAttractorPlural * freqlog_n1n2 + 
+                                 (cGrammatical * cAttractorPlural * freqlog_n1n2 + 1| subject) + 
+                                 (cGrammatical * cAttractorPlural + 1| item),
                    data = df_merged_nofillers %>% subset(experiment == "Experiment 1"),
                    family = bernoulli("probit"), 
                    chains = n_chains, cores = n_cores, iter = n_iter, init_r = .1,
@@ -571,18 +575,18 @@ m_responses_exp1only <- brm(ResponseYes ~ cUngrammatical * cAttractorPlural * fr
                    )
 
 fname_exp1_responses_Lagoonly <- "../workspace_exp1/fit_responses_lagoonly"
-m_responses_Lagoonly <- brm(ResponseYes ~ cUngrammatical * cAttractorPlural * freqlog_n1n2 + 
-                                 (cUngrammatical * cAttractorPlural * freqlog_n1n2 + 1| subject) + 
-                                 (cUngrammatical * cAttractorPlural + 1| item),
+m_responses_Lagoonly <- brm(ResponseYes ~ cGrammatical * cAttractorPlural * freqlog_n1n2 + 
+                                 (cGrammatical * cAttractorPlural * freqlog_n1n2 + 1| subject) + 
+                                 (cGrammatical * cAttractorPlural + 1| item),
                    data = df_merged_nofillers %>% subset(experiment != "Experiment 1"),
                    family = bernoulli("probit"), 
                    chains = n_chains, cores = n_cores, iter = n_iter, init_r = .1,
                    file = fname_exp1_responses_Lagoonly)
 
 fname_exp1_rts <- "../workspace_exp1/fit_responses_rt"
-m_rts <- brm(RT ~ cEndsInConsonant * cUngrammatical * cAttractorPlural * freqlog_n1n2 +
-                                 (cUngrammatical * cAttractorPlural * freqlog_n1n2 + 1| subject) +
-                                 (cUngrammatical * cAttractorPlural + 1| item),
+m_rts <- brm(RT ~ cEndsInConsonant * cGrammatical * cAttractorPlural * freqlog_n1n2 +
+                                 (cGrammatical * cAttractorPlural * freqlog_n1n2 + 1| subject) +
+                                 (cGrammatical * cAttractorPlural + 1| item),
                    data = df_merged_nofillers,
                    family = lognormal(),
                    chains = n_chains, cores = n_cores, iter = n_iter,
@@ -605,46 +609,46 @@ maybe this is not the perfect place to write this. -->
 
 
 ```{r Exp1:ModelPlots, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
-contrast_names <- c("cUngrammatical" = "Ungrammaticality",
+contrast_names <- c("cGrammatical" = "Grammaticality",
                     "cAttractorPlural" = "Plural Attactor",
-                    "cUngrammatical:cAttractorPlural" = "Ungrammaticality * Plural Attractor",
+                    "cGrammatical:cAttractorPlural" = "Grammaticality * Plural Attractor",
                     "cEndsInConsonant" = "Ambiguity",
-                    "cEndsInConsonant:cUngrammatical" = "Ambiguity * Ungrammaticality",
+                    "cEndsInConsonant:cGrammatical" = "Ambiguity * Grammaticality",
                     "cEndsInConsonant:cAttractorPlural" = "Ambiguity * Plural Attractor",
-                    "cEndsInConsonant:cUngrammatical:cAttractorPlural" = "Ambiguity * Ungrammaticality * Plural Attractor")
+                    "cEndsInConsonant:cGrammatical:cAttractorPlural" = "Ambiguity * Grammaticality * Plural Attractor")
 
 p_m_response <- 
   create_model_coefs_plot( m_responses, 
         plot_stats = T, map_names = contrast_names,
         expand_right = 2.5, expand_top = 2, x_stat_adjust = 1.1,
-        x_breaks = c(-3,-2,-1, 0,1, 2) ) + 
+        x_breaks = -1:4 ) + 
         xlab("Estimate (probit)")
-contrast_names_exp1 <- c("cUngrammatical" = "Ungrammaticality",
+contrast_names_exp1 <- c("cGrammatical" = "Grammaticality",
                          "cAttractorPlural" = "Plural Attactor",
                          "freqlog_n1n2"="log Frequency: N1-N2",
-                         "cUngrammatical:freqlog_n1n2" = "Ungrammaticality * log Frequency: N1-N2",
+                         "cGrammatical:freqlog_n1n2" = "Grammaticality * log Frequency: N1-N2",
                          "cAttractorPlural:freqlog_n1n2" = "Plural Attactor * log Frequency: N1-N2",
-                         "cUngrammatical:cAttractorPlural" = "Ungrammaticality * Plural Attractor",
-                         "cUngrammatical:cAttractorPlural:freqlog_n1n2" = "Ungrammaticality * Plural Attractor * log Frequency: N1-N2"
+                         "cGrammatical:cAttractorPlural" = "Grammaticality * Plural Attractor",
+                         "cGrammatical:cAttractorPlural:freqlog_n1n2" = "Grammaticality * Plural Attractor * log Frequency: N1-N2"
                         )
 
 p_m_response_exp1 <- 
   create_model_coefs_plot( m_responses_exp1only, 
         plot_stats = T, map_names = contrast_names_exp1,
         expand_right = 2.5, expand_top = 2, x_stat_adjust = 1.1,
-        x_breaks = c(-3,-2,-1, 0,1, 2) ) + 
+        x_breaks = -1:4 ) + 
         xlab("Estimate (probit)")
 
-p_m_response_exp1 <- p_m_response_exp1 + facet_wrap(~"Experiment 1") + annotate(x=-3, xend=2, y=0, yend=0, lwd=0.25, geom="segment")
+p_m_response_exp1 <- p_m_response_exp1 + facet_wrap(~"Experiment 1") + annotate(x=-2, xend=4, y=0, yend=0, lwd=0.25, geom="segment")
 
 p_m_response_lago <- 
   create_model_coefs_plot( m_responses_Lagoonly, 
         plot_stats = T, map_names = contrast_names_exp1,
         expand_right = 2.5, expand_top = 2, x_stat_adjust = 1.1,
-        x_breaks = c(-3,-2,-1, 0,1, 2) ) + 
+        x_breaks = -2:4 ) + 
         xlab("Estimate (probit)")
 
-p_m_response_lago <- p_m_response_lago + facet_wrap(~"Lago et al. (2018)") + annotate(x=-3, xend=2, y=0, yend=0, lwd=0.25, geom="segment")
+p_m_response_lago <- p_m_response_lago + facet_wrap(~"Lago et al. (2018)") + annotate(x=-2, xend=4, y=0, yend=0, lwd=0.25, geom="segment")
 
 p_m_response_exp1_and_lago <- ggarrange(p_m_response_exp1, p_m_response_lago, ncol = 1)
 
@@ -772,6 +776,8 @@ bad_subjects2 <- subset(avg_by_subj_wide2, delta_dc <= 0.25 ) %>% .$subject
 
 data_exp2_clean <- data_exp2 %>% subset(!subject %in% bad_subjects2)
 
+data_exp2_clean %<>% filter(RT > 200 )
+
 df_merge_exp2 <- data_exp2_clean %>% ungroup() %>% 
                       dplyr::select(source=experiment, grammatical, attractor_num, # condition,
                                     subject, item=Item,
@@ -867,18 +873,18 @@ n_iter <- 2000
 library(brms)
 
 fname_exp2_responses <- "../workspace_exp2/fit_responses"
-m_responses2 <- brm(ResponseYes ~ cVerbalAttractor * cUngrammatical * cAttractorPlural + 
-                                 (cUngrammatical * cAttractorPlural + 1| subject) +
-                                 (cUngrammatical * cAttractorPlural + 1| item),
+m_responses2 <- brm(ResponseYes ~ cVerbalAttractor * cGrammatical * cAttractorPlural + 
+                                 (cGrammatical * cAttractorPlural + 1| subject) +
+                                 (cGrammatical * cAttractorPlural + 1| item),
                    data = df_merged_nofillers2 %>% subset(!is.na(ResponseYes)),
                    family = bernoulli("probit"),
                    file = fname_exp2_responses, 
                    chains = n_chains, cores = n_cores, iter = n_iter)
 
 fname_exp2only_responses <- "../workspace_exp2/fit_responses_exp2only"
-m_responses2_exp2only <- brm(ResponseYes ~ cUngrammatical * cAttractorPlural + 
-                                 (cUngrammatical * cAttractorPlural + 1| subject) +
-                                 (cUngrammatical * cAttractorPlural + 1| item),
+m_responses2_exp2only <- brm(ResponseYes ~ cGrammatical * cAttractorPlural + 
+                                 (cGrammatical * cAttractorPlural + 1| subject) +
+                                 (cGrammatical * cAttractorPlural + 1| item),
                    data = df_merged_nofillers2 %>% 
                               subset(!is.na(ResponseYes)) %>% 
                               subset(experiment == "Experiment 2"),
@@ -894,31 +900,31 @@ model2_results_table <- fixef(m_responses2, summary = T, robust = F) %>%
 
 ```{r Exp2:ModelPlots, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 
-contrast_names2_le <- c("cUngrammatical" = "Ungrammaticality",
+contrast_names2_le <- c("cGrammatical" = "Grammaticality",
                     "cAttractorPlural" = "Plural Attactor",
                     "cVerbalAttractor" = "Verbal Attractor",
-                    "cUngrammatical:cAttractorPlural" = "Ungrammaticality * Plural Attractor",
-                    "cVerbalAttractor:cUngrammatical" = "Ungrammaticality * Verbal Attractor",
+                    "cGrammatical:cAttractorPlural" = "Grammaticality * Plural Attractor",
+                    "cVerbalAttractor:cGrammatical" = "Grammaticality * Verbal Attractor",
                     "cVerbalAttractor:cAttractorPlural" = "Verbal Attractor * Plural Attractor",
-                    "cVerbalAttractor:cUngrammatical:cAttractorPlural" = "Verbal Attractor * Ungrammaticality * Plural Attractor")
+                    "cVerbalAttractor:cGrammatical:cAttractorPlural" = "Verbal Attractor * Grammaticality * Plural Attractor")
 
 p_m_response_exp2 <- 
   create_model_coefs_plot( m_responses2, 
         plot_stats = T, map_names = contrast_names2_le,
         expand_right = 4.5, expand_top = 1.5, x_stat_adjust = .75,
-        x_breaks = c(-3,-2,-1, 0, 1) ) + 
+        x_breaks = -1:4 ) + 
         xlab("Estimate (probit)")
     
-p_m_response_exp2 <- p_m_response_exp2 + annotate(x=-3, xend=1, y=0, yend=0, lwd=0.25, geom="segment")
+p_m_response_exp2 <- p_m_response_exp2 + annotate(x=-1, xend=4, y=0, yend=0, lwd=0.25, geom="segment")
 
 p_m_response_exp2_exp2only <- 
   create_model_coefs_plot( m_responses2_exp2only, 
         plot_stats = T, map_names = contrast_names2_le,
-        expand_right = 4.5, expand_top = 1.5, x_stat_adjust = .75,
-        x_breaks = c(-3,-2,-1, 0, 1) ) + 
+        expand_right = 1.5, expand_top = 1.5, x_stat_adjust = .75,
+        x_breaks = -1:4 ) + 
         xlab("Estimate (probit)")
     
-p_m_response_exp2only <- p_m_response_exp2_exp2only + annotate(x=-3, xend=1, y=0, yend=0, lwd=0.25, geom="segment")
+p_m_response_exp2only <- p_m_response_exp2_exp2only + annotate(x=-1, xend=4, y=0, yend=0, lwd=0.25, geom="segment")
 
 ```
 
