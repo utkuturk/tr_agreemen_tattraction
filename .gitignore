@@ -1,9 +1,15 @@
 # History files
 .Rhistory
 .Rapp.history
-fit*.rds
+
+# Model files
+R/fits/responses.rds
+R/fits/responses_exp1only.rds
+R/fits/responses_Lagoonly.rds
+R/fits/rt.rds
 
 # Session Data files
+data/complete_environment.RData
 .RData
 
 # User-specific files

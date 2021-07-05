@@ -1,0 +1,31 @@
+exp1_cur_entry1 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "ungrammatical", attractor_num == "plural")
+exp1_cur_entry1$M %<>% round(.,2)
+exp1_cur_entry1$SE %<>% round(.,2)
+exp1_cur_entry2 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "ungrammatical", attractor_num == "singular")
+exp1_cur_entry2$M %<>% round(.,2)
+exp1_cur_entry2$SE %<>% round(.,2)
+
+exp1_cur_entry3 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "grammatical", attractor_num == "singular")
+exp1_cur_entry3$M %<>% round(.,2)
+exp1_cur_entry3$SE %<>% round(.,2)
+
+exp1_cur_entry4 = avg_exp$resp %>% filter(experiment == "Experiment 1", grammatical == "grammatical", attractor_num == "plural")
+exp1_cur_entry4$M %<>% round(.,2)
+exp1_cur_entry4$SE %<>% round(.,2)
+
+lago_cur_entry1 = avg_exp$resp %>% filter(experiment == "Lago et al. (2018)", grammatical == "ungrammatical", attractor_num == "plural")
+lago_cur_entry1$M %<>% round(.,2)
+lago_cur_entry1$SE %<>% round(.,2)
+
+lago_cur_entry2 = avg_exp$resp %>% filter(experiment == "Lago et al. (2018)", grammatical == "ungrammatical", attractor_num == "singular")
+lago_cur_entry2$M %<>% round(.,2)
+lago_cur_entry2$SE %<>% round(.,2)
+
+mean_age <- round(mean(form_exp1$Age))
+min_age <- min(form_exp1$Age)
+max_age <- max(form_exp1$Age)
+m_effect <- sprintf("%0.2f", exp1_cur_entry1$M-exp1_cur_entry2$M)
+m_effect_lago <- sprintf("%0.2f", lago_cur_entry1$M-lago_cur_entry2$M)
+estimate_cGrammatical <- print_estimate_with_ci( m_responses, 'cGrammatical' )
+estimate_cGrammatical_cAttractorPlural <- print_estimate_with_ci( m_responses, 'cGrammatical:cAttractorPlural')
+estimate_threeway_interaction <- print_estimate_with_ci( m_responses, 'cEndsInConsonant:cGrammatical:cAttractorPlural')
