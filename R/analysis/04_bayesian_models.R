@@ -87,10 +87,27 @@ models[['responses']] <- m_responses
   }
 }
 
+
+
+# Model with ungrammatical sentences
+fname_ungram_responses <- "./R/fits/ungram_responses"
+fname_ungram_responses_stan <- "./R/models/ungram_responses.stan"
+m_ungram_responses <- brm(ResponseYes ~ cEndsInConsonant * cAttractorPlural + 
+                     (cAttractorPlural + 1| subject) + 
+                     (cAttractorPlural + 1| item),
+                   data = df_merged_nofillers %>% subset(grammatical != "grammatical"),
+                   family = bernoulli("probit"), 
+                   chains = n_chains, cores = n_cores, iter = n_iter, warmup = n_warmup, init_r = .1,
+                   file = fname_ungram_responses, save_model = fname_ungram_responses_stan)
+
+models[['ungram_responses']] <- m_ungram_responses
+
+
+
 tables <- vector('list', length(models))
 for (i in seq_along(models)) {
   fname <- paste0('results_table_', names(models[i]))
   tables[[fname]] <- fixef(models[[i]], summary = T, robust = F) %>%
     as.data.frame() #%>% tibble::rownames_to_column("variables")
-
+  
 }

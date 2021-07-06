@@ -292,6 +292,37 @@ A.B. conceived the initial version of the presented idea. A.B. and C.D. conceive
 %\printbibliography %for use with biblatex; comment out if you use natbib
 \bibliography{gp_short} %for use with natbib; comment out if you use biblatex, and change 'sample' by the name of your bib-file
 
+\section*{Appendix A: Ungrammatical Sentences Model}
+
+
+\begin{figure}[hbt!]
+\centering
+
+
+<<UngramResponseModel,  echo=FALSE, fig.align='center', fig.height=3, warning=FALSE, dev='cairo_pdf', dev='png', dpi = 300, message=FALSE>>=
+
+suppressWarnings({
+p_m_ungram_response
+})
+
+@
+
+\caption{Estimates and 95\% credible intervals for the regression coefficients for the model of our experiment and \citet{LagoEtAl:2019}. In this model, only the ungrammatical sentences are included}
+\label{fig:UngramResponseModel}
+\end{figure}
+
+<<echo=FALSE, warning=FALSE, message=FALSE>>=
+library(knitr)
+dat <- tables$results_table_ungram_responses
+options(knitr.table.format = "latex")
+@
+
+<<results='asis', echo=FALSE, warning=FALSE, message=FALSE>>=
+kable(dat, booktabs=TRUE, caption="Point estimate, estimate error, and credible interval for Regression coefficients")
+@
+
+
+
 
 \end{document}
 %%% Local Variables:

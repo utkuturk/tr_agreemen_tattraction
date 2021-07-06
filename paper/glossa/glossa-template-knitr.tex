@@ -83,7 +83,7 @@
 \pdftitle{Agreement Attraction in Turkish}
 \pdfkeywords{agreement attraction, syncretism, Turkish, bayesian, replication}
 
-\title[Agreement Attraction in Turkish]{Agreement Attraction in Turkish\\ \bigskip \large Word count: 2,719}
+\title[Agreement Attraction in Turkish]{Agreement Attraction in Turkish\\ \bigskip \large Word count: 2,749}
 % Optional short title inside square brackets, for the running headers.
 
 
@@ -306,6 +306,49 @@ A.B. conceived the initial version of the presented idea. A.B. and C.D. conceive
 
 %\printbibliography %for use with biblatex; comment out if you use natbib
 \bibliography{gp_short} %for use with natbib; comment out if you use biblatex, and change 'sample' by the name of your bib-file
+
+\section*{Appendix A: Ungrammatical Sentences Model}
+
+
+\begin{figure}[hbt!]
+\centering
+
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=\maxwidth]{figure/UngramResponseModel-1} 
+
+}
+
+
+\end{knitrout}
+
+\caption{Estimates and 95\% credible intervals for the regression coefficients for the model of our experiment and \citet{LagoEtAl:2019}. In this model, only the ungrammatical sentences are included}
+\label{fig:UngramResponseModel}
+\end{figure}
+
+
+
+\begin{table}
+
+\caption{\label{tab:unnamed-chunk-3}Point estimate, estimate error, and credible interval for Regression coefficients}
+\centering
+\begin{tabular}[t]{lrrrr}
+\toprule
+  & Estimate & Est.Error & Q2.5 & Q97.5\\
+\midrule
+Intercept & -1.2216372 & 0.0897748 & -1.3990933 & -1.0491069\\
+cEndsInConsonant & 0.0740791 & 0.1739013 & -0.2713538 & 0.4199774\\
+cAttractorPlural & 0.4594237 & 0.0995349 & 0.2560289 & 0.6526212\\
+cEndsInConsonant:cAttractorPlural & 0.0077682 & 0.1629159 & -0.3157023 & 0.3250568\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+
 
 
 \end{document}

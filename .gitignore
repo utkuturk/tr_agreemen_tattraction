@@ -7,6 +7,7 @@ R/fits/responses.rds
 R/fits/responses_exp1only.rds
 R/fits/responses_Lagoonly.rds
 R/fits/rt.rds
+R/fits/ungram_responses.rds
 
 # Session Data files
 data/complete_environment.RData
